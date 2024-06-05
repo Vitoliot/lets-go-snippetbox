@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"flag"
+	"html/template"
 	"lets-go-snippetbox/internal/models"
 	"log/slog"
 	"net/http"
@@ -12,8 +13,9 @@ import (
 )
 
 type application struct {
-	logger   *slog.Logger
-	snippets *models.SnippetModel
+	logger        *slog.Logger
+	snippets      *models.SnippetModel
+	templateCache map[string]*template.Template
 }
 
 func main() {
@@ -27,6 +29,12 @@ func main() {
 		Level:     slog.LevelDebug,
 	}))
 
+	templateCache, err := newTemplateCache()
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
+
 	db, err := openDb(*dsn)
 
 	if err != nil {
@@ -36,7 +44,7 @@ func main() {
 
 	defer db.Close()
 
-	app := application{logger: logger, snippets: &models.SnippetModel{DB: db}}
+	app := application{logger: logger, snippets: &models.SnippetModel{DB: db}, templateCache: templateCache}
 
 	logger.Info("starting server", slog.String("addr", *addr))
 
