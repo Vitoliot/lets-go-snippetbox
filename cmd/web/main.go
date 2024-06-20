@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"database/sql"
 	"flag"
 	"github.com/alexedwards/scs/mysqlstore"
@@ -57,12 +58,26 @@ func main() {
 	sessionManager.Store = mysqlstore.New(db)
 	sessionManager.Cookie.Secure = true
 
-	app := application{logger: logger, snippets: &models.SnippetModel{DB: db}, templateCache: templateCache, formDecoder: formDecoder, sessionManager: sessionManager}
+	app := application{
+		logger:         logger,
+		snippets:       &models.SnippetModel{DB: db},
+		templateCache:  templateCache,
+		formDecoder:    formDecoder,
+		sessionManager: sessionManager}
+
+	tlsConfig := &tls.Config{
+		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
+	}
 
 	srv := http.Server{
-		Addr:     *addr,
-		Handler:  app.routes(),
-		ErrorLog: slog.NewLogLogger(logger.Handler(), slog.LevelError),
+		Addr:           *addr,
+		Handler:        app.routes(),
+		ErrorLog:       slog.NewLogLogger(logger.Handler(), slog.LevelError),
+		TLSConfig:      tlsConfig,
+		IdleTimeout:    time.Minute,
+		ReadTimeout:    5 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 524288,
 	}
 
 	logger.Info("starting server", slog.String("addr", *addr))
