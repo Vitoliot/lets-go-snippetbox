@@ -146,7 +146,7 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 			form.AddFieldError("email", "Email address is already in use")
 			data := app.newTemplateData(r)
 			data.Form = form
-			app.render(w, r, http.StatusUnprocessableEntity, "signup.tmpl", data)
+			app.render(w, r, http.StatusUnprocessableEntity, "signup.html", data)
 		} else {
 			app.serverError(w, r, err)
 		}
@@ -167,7 +167,7 @@ func (app *application) userLogin(w http.ResponseWriter, r *http.Request) {
 func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	var form userLoginForm
 
-	err := app.decodePostForm(r, form)
+	err := app.decodePostForm(r, &form)
 
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
